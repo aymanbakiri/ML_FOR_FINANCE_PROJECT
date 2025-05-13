@@ -1,0 +1,27 @@
+# Ignore Compustat firm characteristics
+CompFirmCharac.csv
+
+# Ignore JKP factors 
+\[\usa\]_\[all_factors\]_\[monthly\]_\[vw_cap\].csv
+
+# Ignore 10-K reports (textual data)
+mda_text.parquet
+
+# Ignore Chen-Zimmerman predictors
+PredictorLSretWide-feds-2021037.csv
+
+# Ignore earnings call transcripts
+earnings_calls.parquet
+
+# Ignore daily CRSP return data
+daily_crsp.csv
+
+# Also ignore any zipped raw versions or partials
+*.zip
+*.csv.part
+*.parquet.part
+
+# Ignore temp and cache files
+*.pyc
+__pycache__/
+.DS_Store
