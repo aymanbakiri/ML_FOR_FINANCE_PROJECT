@@ -19,6 +19,7 @@ earnings_calls.parquet
 
 # Ignore daily CRSP return data
 daily_crsp.csv
+data/*.csv
 
 # Also ignore any zipped raw versions or partials
 *.zip
