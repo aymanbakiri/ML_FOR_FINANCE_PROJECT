@@ -2,7 +2,7 @@
 
 This project explores the prediction of monthly stock returns by integrating financial fundamentals, technical indicators, and textual sentiment from 10-K reports.
 
-```markdown
+
 ## Repository Structure
 
 ```
@@ -15,7 +15,7 @@ ML_FOR_FINANCE_PROJECT/
 ├── .gitignore
 └── README.md
 ```
-```
+
 
 ## Setup Instructions
 
