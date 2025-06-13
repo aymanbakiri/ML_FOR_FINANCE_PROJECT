@@ -1,7 +1,7 @@
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import numpy as np
 
 from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam
