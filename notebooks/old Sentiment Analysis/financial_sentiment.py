@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-
+import numpy as np
 from collections import Counter
 
 positive_words = {"growth", "profit", "increase", "gain", "strong", "exceed"}
