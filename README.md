@@ -10,7 +10,8 @@ ML_FOR_FINANCE_PROJECT/
 ├── notebooks/          # Development notebooks (EDA, modeling, sentiment)
 ├── src/                # Modular Python scripts for preprocessing, modeling, utils
 ├── mapping/            # Scripts for mapping between CIK, Ticker, CUSIP
-├── docs/               # Final report
+├── docs/               # Project and datasets documentation
+├── Report/             # PDF report
 ├── data/               # Raw and processed data (not pushed to Git)
 ├── .gitignore
 └── README.md
