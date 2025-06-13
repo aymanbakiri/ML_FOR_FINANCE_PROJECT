@@ -2,6 +2,7 @@
 CompFirmCharac.csv
 CompFirmCharac_final.csv
 CompFirmCharac_cleaned.csv
+data/
 
 # Ignore JKP factors 
 \[\usa\]_\[all_factors\]_\[monthly\]_\[vw_cap\].csv
