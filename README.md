@@ -2,16 +2,20 @@
 
 This project explores the prediction of monthly stock returns by integrating financial fundamentals, technical indicators, and textual sentiment from 10-K reports.
 
+```markdown
 ## Repository Structure
 
+```
 ML_FOR_FINANCE_PROJECT/
-├── notebooks/ # Development notebooks (EDA, modeling, sentiment)
-├── src/ # Modular Python scripts for preprocessing, modeling, utils
-├── mapping/ # Scripts for mapping between CIK, Ticker, CUSIP
-├── docs/ # Final report
-├── data/ # Raw and processed data (not pushed to Git)
+├── notebooks/          # Development notebooks (EDA, modeling, sentiment)
+├── src/                # Modular Python scripts for preprocessing, modeling, utils
+├── mapping/            # Scripts for mapping between CIK, Ticker, CUSIP
+├── docs/               # Final report
+├── data/               # Raw and processed data (not pushed to Git)
 ├── .gitignore
 └── README.md
+```
+```
 
 ## Setup Instructions
 
