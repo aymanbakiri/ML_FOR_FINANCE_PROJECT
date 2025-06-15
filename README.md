@@ -42,7 +42,7 @@ ML_FOR_FINANCE_PROJECT/
 Clone the repository and set up the environment:
 
 ```bash
-git clone https://github.com/yourusername/ML_FOR_FINANCE_PROJECT.git
+git clone https://github.com/aymanbakiri/ML_FOR_FINANCE_PROJECT.git
 cd ML_FOR_FINANCE_PROJECT
 ```
 
