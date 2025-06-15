@@ -118,4 +118,3 @@ Ensure that datasets are preprocessed and aligned before training.
 - Quentin Brian Rossier  
 - Ayman Bakiri  
 - Amine Bousseta
-```
