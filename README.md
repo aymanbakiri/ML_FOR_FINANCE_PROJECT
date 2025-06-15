@@ -26,7 +26,7 @@ ML_FOR_FINANCE_PROJECT/
 ├── docs/                # Documentation and guides
 ├── mapping/             # Scripts for identifier mapping (CIK, CUSIP, Ticker)
 ├── notebooks/EDA/       # Exploratory analysis and visualizations
-├── src/                 # Core Python modules: preprocessing, modeling, sentiment
+├── src/                 # Core Python modules: preprocessing, modeling, sentiment, training, models
 ├── .gitignore           # Git exclusions
 ├── README.md            # This file
 ├── requirements.txt     # Dependencies
@@ -91,22 +91,12 @@ You must manually download and place all raw datasets (Compustat, CRSP, and 10-K
 
 ---
 
-## **Usage**
+## **Training and Evaluation**
 
-Train and evaluate models as follows:
+You can find our detailed main training and results in the src/classifier/results.ipynb notebook:
 
-```bash
-# Train Random Forest
-python src/rf_classifier.py
 
-# Train LSTM or Transformer (via notebook)
-jupyter notebook notebooks/EDA/training.ipynb
-
-# Generate sentiment labels
-python src/sentiment_analysis.py
-```
-
-Ensure that datasets are preprocessed and aligned before training.
+Ensure that datasets are in the correct directory (data/ by default).
 
 
 ---
