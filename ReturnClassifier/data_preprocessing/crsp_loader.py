@@ -80,6 +80,11 @@ month_dummies = pd.get_dummies(
 df_crsp = pd.concat([df_crsp, month_dummies], axis=1)
 df_crsp = df_crsp.drop(columns=['month'])
 
+df_crsp['month'] = df_crsp['date'].dt.month
+m = df_crsp['month']
+df_crsp['month_sin'] = np.sin(2 * np.pi * (m - 1) / 12)
+df_crsp['month_cos'] = np.cos(2 * np.pi * (m - 1) / 12)
+
 # Get the current columns
 cols = list(df_crsp.columns)
 
