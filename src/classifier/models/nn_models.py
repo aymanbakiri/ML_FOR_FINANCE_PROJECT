@@ -204,7 +204,7 @@ class InceptionTime(NamedModule):
 
 
 
-def train(model, dl_train, dl_val, optimizer, scheduler, criterion, device, n_epochs=101, patience=-1):
+def train(model, dl_train, dl_val, optimizer, scheduler, criterion, device, n_epochs=101, patience=-1, path):
     best_val_auc = 0.0
     trials = 0
     clip_grad = 1.0
@@ -240,7 +240,7 @@ def train(model, dl_train, dl_val, optimizer, scheduler, criterion, device, n_ep
 
         if val_auc > best_val_auc:
             best_val_auc, trials = val_auc, 0
-            torch.save(model.state_dict(), f"models/saved_models/{model.name}.pth")
+            torch.save(model.state_dict(), f"{path}/{model.name}.pth")
         else:
             trials += 1
             if trials >= patience and patience > 0 :
