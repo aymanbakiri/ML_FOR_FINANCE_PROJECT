@@ -1,4 +1,4 @@
-# **Multimodal Return Prediction: Integrating Financial Fundamentals, Technical Signals, and Textual Sentiment**
+# **Multimodal Return Prediction: Merging Fundamentals, Technicals, and Financial Texts**
 
 ## **Overview**
 
