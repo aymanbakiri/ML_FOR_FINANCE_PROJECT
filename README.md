@@ -2,124 +2,112 @@
 
 ## **Overview**
 
-This project investigates the use of multiple data modalities to forecast monthly stock returns. Specifically, we combine structured financial indicators, engineered technical features, and sentiment extracted from 10-K filings (MD&A section) using FinBERT. The task is framed as a binary classification problem: predicting whether a firm's return in the following month will be positive or negative.
+This project investigates whether combining multiple data modalities—structured financial features, technical indicators, and textual sentiment—can improve monthly stock return prediction. In particular, we extract sentiment from the MD&A section of 10-K filings using FinBERT and integrate it with firm-level financial and price-based data.
 
-We explore a wide range of models, from random forests and gradient boosting to recurrent neural networks and transformer-based architectures for time series.
+The prediction task is framed as a binary classification problem: will a firm's return be positive or negative in the next month? We evaluate a wide spectrum of models, including random forests, gradient boosting, recurrent neural networks, transformers, and multi-scale convolutional networks.
 
 ---
 
 ## **Repository Philosophy**
 
-This repository was designed with clarity, modularity, and reproducibility in mind. We aimed to create a clean and understandable codebase that is easy to navigate and build upon.
+The repository is structured for clarity, reproducibility, and collaboration. Key design principles include:
 
-- **Clear folder structure**: Each part of the pipeline (data, preprocessing, modeling, evaluation) is logically separated.
-- **Modular and documented code**: Python scripts are written for reuse, and notebooks illustrate how to run end-to-end experiments.
-- **Reproducible workflows**: All major experiments are either scripted or runnable in Jupyter notebooks, with fixed random seeds where relevant.
-- **Lightweight setup**: The number of dependencies is minimized and documented in `requirements.txt`.
+- **Modular architecture**: All scripts are separated by function (data handling, modeling, evaluation).
+- **Reproducible experiments**: Major pipelines are either executable scripts or Jupyter notebooks.
+- **Minimal setup**: Dependencies are listed in `requirements.txt`.
+- **Clean organization**: Easy navigation and separation of raw data, code, notebooks, and documentation.
 
 ---
 
 ## **Repository Structure**
 
-```
+```text
 ML_FOR_FINANCE_PROJECT/
-├── notebooks/          # Development notebooks: EDA, model training, sentiment extraction
-├── src/                # Modular Python scripts (data processing, models, utils)
-├── mapping/            # Scripts to map CIK, Ticker, CUSIP identifiers
-├── docs/               # Dataset guides, preprocessing instructions
-├── Report/             # Final LaTeX report and bibliography
-├── data/               # Raw and processed data (not tracked in Git)
-├── requirements.txt    # Python dependencies
-└── README.md           # Project overview and instructions
+├── docs/                # Documentation and guides
+├── mapping/             # Scripts for identifier mapping (CIK, CUSIP, Ticker)
+├── notebooks/EDA/       # Exploratory analysis and visualizations
+├── src/                 # Core Python modules: preprocessing, modeling, sentiment
+├── .gitignore           # Git exclusions
+├── README.md            # This file
+├── requirements.txt     # Dependencies
 ```
+
+> - `data/`: Contains raw and processed datasets (not included in Git)
+> - `Report/`: Contains the full LaTeX report and bibliography
 
 ---
 
 ## **Installation**
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/ML_FOR_FINANCE_PROJECT.git
-   cd ML_FOR_FINANCE_PROJECT
-   ```
+Clone the repository and set up the environment:
 
-2. Create a virtual environment (optional but recommended):
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+```bash
+git clone https://github.com/yourusername/ML_FOR_FINANCE_PROJECT.git
+cd ML_FOR_FINANCE_PROJECT
+```
 
-3. Install required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Install required packages:
 
-4. Download and place all necessary raw datasets (Compustat, CRSP, 10-Ks) into the `data/` folder.
+```bash
+pip install -r requirements.txt
+```
+
+You must manually download and place all raw datasets (Compustat, CRSP, and 10-K reports) into the `data/` directory.
 
 ---
 
 ## **Models and Methods**
 
 ### **1. Random Forest Classifier**
-- Input: Flattened firm-month tabular data.
-- Preprocessing: Median imputation, standardization.
-- Output: Binary prediction of positive return.
+- Uses tabular financial and technical data.
+- Preprocessing includes standardization and median imputation.
+- Baseline model for monthly return direction classification.
 
 ### **2. XGBoost Classifier**
-- Objective: Binary logistic loss optimized via AUC.
-- Strength: Handles feature sparsity and imbalance well.
-- Hyperparameter tuning: Tree depth, learning rate, estimators.
+- Trained to maximize ROC AUC.
+- Tuned over tree depth, learning rate, and class imbalance parameters.
+- Demonstrates class skew under default thresholds.
 
-### **3. Random Forest Regressor**
-- Objective: Estimate raw return value before thresholding into binary labels.
-- Metrics: MAE, MSE, R².
+### **3. Recurrent Neural Networks (LSTM variants)**
+- Models receive rolling windows (6 or 24 months) of firm histories.
+- Architectures:
+  - `SmallLSTM`: Lightweight and shallow.
+  - `LargeLSTM`: Two-layer bidirectional with dropout.
+  - `EnhancedLSTM`: Adds LayerNorm and a dense classification head.
 
-### **4. LSTM-Based Neural Networks**
-- Windowed modeling over 6-month rolling firm-level inputs.
-- Variants:
-  - `SmallLSTM`: Lightweight model for basic sequence learning.
-  - `LargeLSTM`: Deeper, bidirectional architecture with dropout.
-  - `EnhancedLSTM`: Adds LayerNorm and a deeper non-linear head.
+### **4. Transformer-Based Classifier**
+- Applies self-attention over temporal sequences.
+- Captures long-range dependencies more effectively than recurrence.
 
-### **5. Transformer and InceptionTime**
-- `StockTransformer`: Temporal transformer over monthly firm data.
-- `InceptionTime`: CNN-based time series model with residuals and multi-scale convolutions.
+### **5. InceptionTime**
+- Uses 1D convolutions with multiple kernel sizes and residual blocks.
+- Best performing model across metrics: accuracy, ROC AUC, and F1.
 
-### **6. FinBERT-Based Sentiment Features**
-- Extracted from MD&A sections of 10-K reports.
-- Sentiment classification via FinBERT with chunking and aggregation.
-- Integrated as an additional categorical feature in all models.
+### **6. FinBERT Sentiment Features**
+- Sentiment extracted from MD&A sections of 10-Ks using FinBERT.
+- Texts are split into overlapping chunks and aggregated via majority vote.
+- Sentiment used as a categorical feature in tree-based models.
+- Not yet integrated into neural networks due to limited firm coverage. This remains a direction for future work.
 
 ---
 
 ## **Usage**
 
-All scripts are modular and run independently. Key pipelines:
+Train and evaluate models as follows:
 
-- Train Random Forest:
-  ```bash
-  python src/rf_classifier.py
-  ```
+```bash
+# Train Random Forest
+python src/rf_classifier.py
 
-- Train LSTM or Transformer:
-  ```bash
-  python training.ipynb
-  ```
+# Train LSTM or Transformer (via notebook)
+jupyter notebook notebooks/EDA/training.ipynb
 
-- Generate sentiment scores:
-  ```bash
-  python src/sentiment_analysis.py
-  ```
+# Generate sentiment labels
+python src/sentiment_analysis.py
+```
 
-Ensure all datasets are properly preprocessed and aligned before launching model training.
+Ensure that datasets are preprocessed and aligned before training.
 
----
-
-## **Reproducibility**
-
-- All preprocessing and modeling steps are documented in `notebooks/` and implemented in `src/`.
-- Random seeds are fixed for deterministic runs.
-- Chronological splits ensure no data leakage.
 
 ---
 
@@ -129,5 +117,5 @@ Ensure all datasets are properly preprocessed and aligned before launching model
 - Amine Bengelloun  
 - Quentin Brian Rossier  
 - Ayman Bakiri  
-- Amine Boucetta
+- Amine Bousseta
 ```
