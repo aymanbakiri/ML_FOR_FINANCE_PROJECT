@@ -2,11 +2,22 @@
 
 import torch
 import torch.nn as nn
+from sklearn.metrics import roc_auc_score
 
-class EnhancedLSTM(nn.Module):
+class NamedModule(nn.Module):
+    MODEL_NAME: str  # must be overridden
+
+    @property
+    def name(self) -> str:
+        return self.MODEL_NAME
+
+
+class EnhancedLSTM(NamedModule):
     """
     Bidirectional LSTM with LayerNorm and a small head.
     """
+
+    MODEL_NAME = "enhancedLSTM"
     def __init__(self, in_dim, hid_dim=256, num_layers=2, dropout=0.3):
         super().__init__()
         self.lstm = nn.LSTM(
@@ -24,19 +35,19 @@ class EnhancedLSTM(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(hid_dim//2, 1)
         )
-
     def forward(self, x):
         out, _ = self.lstm(x)
         last = out[:, -1, :]          # (B, hid_dim*2)
         normed = self.norm(last)
-        return self.head(normed).squeeze(1)
-    
+        return self.head(normed).squeeze(1)     
 
 
-class SmallLSTM(nn.Module):
+class SmallLSTM(NamedModule):
     """
     Simple unidirectional LSTM for 6‐month sequences.
     """
+
+    MODEL_NAME = "smallLSTM"
     def __init__(self, in_dim, hid_dim=32):
         super().__init__()
         self.lstm = nn.LSTM(in_dim, hid_dim, batch_first=True)
@@ -49,10 +60,14 @@ class SmallLSTM(nn.Module):
         out, _ = self.lstm(x)
         return self.fc(out[:, -1, :]).squeeze(1)
 
-class LargeLSTM(nn.Module):
+
+
+class LargeLSTM(NamedModule):
     """
     Bidirectional LSTM with deeper head.
     """
+
+    MODEL_NAME = "largeLSTM"
     def __init__(self, in_dim, hid_dim=128, num_layers=2, dropout=0.2):
         super().__init__()
         self.lstm = nn.LSTM(
@@ -75,10 +90,12 @@ class LargeLSTM(nn.Module):
         return self.fc(last).squeeze(1)
 
 
-class StockTransformer(nn.Module):
+class StockTransformer(NamedModule):
     """
     Transformer‐based classifier over time‐series window.
     """
+
+    MODEL_NAME = "stockTramsformer"
     def __init__(self, in_dim, window, d_model=128, nhead=4, num_layers=2, dim_ff=256, dropout=0.1):
         super().__init__()
         self.input_proj = nn.Linear(in_dim, d_model)
@@ -103,39 +120,6 @@ class StockTransformer(nn.Module):
         out = self.transformer(x)            # (batch, seq_len, d_model)
         return self.classifier(out[:, -1, :]).squeeze(1)
 
-
-
-class InceptionTime(nn.Module):
-    """
-    InceptionTime network for time‐series classification.
-    """
-    def __init__(self, in_dim, num_blocks=3, out_channels=32, 
-                 kernel_sizes=[10,20,40], bottleneck_channels=32, 
-                 use_residual=True, dropout=0.2):
-        super().__init__()
-        blocks = []
-        channels = in_dim
-        for _ in range(num_blocks):
-            blocks.append(InceptionModule(
-                in_channels=channels,
-                out_channels=out_channels,
-                kernel_sizes=kernel_sizes,
-                bottleneck_channels=bottleneck_channels,
-                use_residual=use_residual,
-                dropout=dropout
-            ))
-            channels = out_channels * (len(kernel_sizes) + 1)
-        self.network = nn.Sequential(*blocks)
-        self.global_pool = nn.AdaptiveAvgPool1d(1)
-        self.classifier = nn.Linear(channels, 1)
-
-    def forward(self, x):
-        # x: (batch, seq_len, features)
-        out = self.network(x)
-        # out: (batch, seq_len, channels)
-        out = out.transpose(1, 2)            # -> (batch, channels, seq_len)
-        pooled = self.global_pool(out).squeeze(2)
-        return self.classifier(pooled).squeeze(1)
 
 class InceptionModule(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_sizes=[10,20,40], 
@@ -181,4 +165,88 @@ class InceptionModule(nn.Module):
         x_cat = self.activation(x_cat)
         x_cat = self.dropout(x_cat)
         return x_cat.transpose(1, 2)
+
+
+class InceptionTime(NamedModule):
+    """
+    InceptionTime network for time‐series classification.
+    """
+
+    MODEL_NAME = "inceptionTime"
+    def __init__(self, in_dim, num_blocks=3, out_channels=32, 
+                 kernel_sizes=[10,20,40], bottleneck_channels=32, 
+                 use_residual=True, dropout=0.2):
+        super().__init__()
+        blocks = []
+        channels = in_dim
+        for _ in range(num_blocks):
+            blocks.append(InceptionModule(
+                in_channels=channels,
+                out_channels=out_channels,
+                kernel_sizes=kernel_sizes,
+                bottleneck_channels=bottleneck_channels,
+                use_residual=use_residual,
+                dropout=dropout
+            ))
+            channels = out_channels * (len(kernel_sizes) + 1)
+        self.network = nn.Sequential(*blocks)
+        self.global_pool = nn.AdaptiveAvgPool1d(1)
+        self.classifier = nn.Linear(channels, 1)
+
+    def forward(self, x):
+        # x: (batch, seq_len, features)
+        out = self.network(x)
+        # out: (batch, seq_len, channels)
+        out = out.transpose(1, 2)            # -> (batch, channels, seq_len)
+        pooled = self.global_pool(out).squeeze(2)
+        return self.classifier(pooled).squeeze(1)
+
+
+
+
+def train(model, dl_train, dl_val, optimizer, scheduler, criterion, device, n_epochs=101, patience=-1):
+    best_val_auc = 0.0
+    trials = 0
+    clip_grad = 1.0
+    stop = 0
+    losses = [100.0]
+    for epoch in range(1, n_epochs):
+        model.train()
+        total_loss = 0.0
+        for xb, yb in dl_train:
+            xb, yb = xb.to(device), yb.to(device)
+            optimizer.zero_grad()
+            logits = model(xb)
+            loss = criterion(logits, yb)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
+            optimizer.step()
+            total_loss += loss.item() * xb.size(0)
+        avg_loss = total_loss / len(dl_train.dataset)
+
+        # validation
+        model.eval()
+        preds, trues = [], []
+        with torch.no_grad():
+            for xb, yb in dl_val:
+                xb = xb.to(device)
+                probs = torch.sigmoid(model(xb)).cpu().numpy()
+                preds.extend(probs)
+                trues.extend(yb.numpy())
+        val_auc = roc_auc_score(trues, preds)
+        scheduler.step(val_auc)
+
+        print(f"Epoch {epoch:02d} | Train Loss: {avg_loss:.4f} | Val AUC: {val_auc:.4f}")
+
+        if val_auc > best_val_auc:
+            best_val_auc, trials = val_auc, 0
+            torch.save(model.state_dict(), f"models/saved_models/{model.name}.pth")
+        else:
+            trials += 1
+            if trials >= patience and patience > 0 :
+                print(f"Early stopping at epoch {epoch}")
+                break
+
+    
+
 

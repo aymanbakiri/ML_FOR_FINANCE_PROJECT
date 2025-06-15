@@ -1,12 +1,10 @@
 import pandas as pd
 import numpy as np
-from crsp_loader import df_crsp, fundamental_cols
-from compustat_loader import df_comp
+from data_preprocessing.crsp_loader import df_crsp
+from data_preprocessing.compustat_loader import df_comp, fundamental_cols
 
 
 
-# Set df_crsp index to “date”
-df_crsp = df_crsp.set_index('date').sort_index()
 
 # Merge (for every month, we get the most recent Compustat row ≤ that month’s date)
 df_merged = pd.merge_asof(
@@ -37,3 +35,9 @@ for col in ['revty','oibdpy','rdipay','xsgay']:
 
 # Optionally we can drop some raw dollar‐amount YTD columns if we want just ratios
 # df = df.drop(columns=['revty','saley','capxy','oibdpy','rdipay','xsgay','txpdy','epsfxy','cshfdy','xoptepsy'])
+
+
+
+
+# Drop any rows where engineered features are NaN
+df.replace([np.inf, -np.inf], np.nan, inplace=True)

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import calendar
 
 # Load Monthly CRSP
@@ -68,16 +69,15 @@ df_crsp = df_crsp.groupby("PERMNO", group_keys=False).apply(add_technical_indica
 
 df_crsp.drop(columns=["close", "EMA_Close", "MACD_diff", "MACD_Signal", 'y_forward'], inplace=True, errors='ignore')
 
-# Add months
 df_crsp['month'] = df_crsp['date'].dt.month.map(lambda x: calendar.month_name[x])
 
-# Create dummy variables with month names as column names
-month_dummies = pd.get_dummies(df_crsp['month']).astype(int)
+month_dummies = pd.get_dummies(
+    df_crsp['month'],
+    drop_first=True,    # drop one level to avoid perfect multicollinearity
+    dtype=int
+)
 
-# Concatenate dummies with original dataframe
 df_crsp = pd.concat([df_crsp, month_dummies], axis=1)
-
-# drop the intermediate 'month' column 
 df_crsp = df_crsp.drop(columns=['month'])
 
 # Get the current columns
@@ -93,5 +93,37 @@ df_crsp = df_crsp[cols]
 
 df_crsp = df_crsp.dropna()
 
-#Set df_crsp index to “date”
+# Generate price‐history features (momentum + volatility)
+#
+#   - 3M momentum: cumulative return over past 3 months (t-3 → t-1)
+#   - 6M momentum: cumulative return over past 6 months
+#   - 12M momentum: cumulative return over past 12 months
+#   - 12M rolling volatility: std of monthly returns over past 12 months
+#
+def compute_momentum_and_vol(df):
+    df = df.sort_values('date')
+    # Rolling log(1+return), because cumulative product of (1 + ret) = exp(sum(log(1+ret)))
+    df['log1p_ret'] = np.log1p(df['MthRet'])
+    df['log1p_ret_shift1'] = df.groupby('CUSIP')['log1p_ret'].shift(1)
+    df['cum12_1_log'] = df.groupby('CUSIP')['log1p_ret_shift1'].rolling(window=11).sum().reset_index(0,drop=True)
+    df['mom_12_1'] = np.expm1(df['cum12_1_log'])
+    df['cum3m_log'] = df.groupby('CUSIP')['log1p_ret'].rolling(window=3, min_periods=3).sum().reset_index(0,drop=True)
+    df['cum6m_log'] = df.groupby('CUSIP')['log1p_ret'].rolling(window=6, min_periods=6).sum().reset_index(0,drop=True)
+    df['cum12m_log'] = df.groupby('CUSIP')['log1p_ret'].rolling(window=12, min_periods=12).sum().reset_index(0,drop=True)
+    df['momentum_3m'] = np.expm1(df['cum3m_log'])    # exp(sum)-1 => (1+r1)*(1+r2)*(1+r3) - 1
+    df['momentum_6m'] = np.expm1(df['cum6m_log'])
+    df['momentum_12m'] = np.expm1(df['cum12m_log'])
+    df['volatility_12m'] = df.groupby('CUSIP')['MthRet'].rolling(window=12, min_periods=12).std().reset_index(0,drop=True)
+    # Drop intermediate log columns
+    return df.drop(columns=['log1p_ret','cum3m_log','cum6m_log','cum12m_log'])
+
+df_crsp = compute_momentum_and_vol(df_crsp)
+
+# Trim CUSIP to 8 characters (for merging) and drop NA
+df_crsp['cusip'] = df_crsp['CUSIP'].astype(str).str[:8]
+df_crsp = df_crsp.dropna(subset=['cusip']).copy()
+
+# Set df_crsp index to “date”
 df_crsp = df_crsp.set_index('date').sort_index()
+
+
